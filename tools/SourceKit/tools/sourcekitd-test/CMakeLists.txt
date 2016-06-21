@@ -2,11 +2,11 @@ set(LLVM_TARGET_DEFINITIONS Options.td)
 tablegen(LLVM Options.inc -gen-opt-parser-defs)
 add_public_tablegen_target(sourcekitdTestOptionsTableGen)
 
-if(SWIFT_SOURCEKIT_USE_INPROC_LIBRARY)
+#if(SWIFT_SOURCEKIT_USE_INPROC_LIBRARY)
   set(SOURCEKITD_TEST_DEPEND sourcekitdInProc)
-else()
-  set(SOURCEKITD_TEST_DEPEND sourcekitd)
-endif()
+  #else()
+  #  set(SOURCEKITD_TEST_DEPEND sourcekitd)
+  #endif()
 
 add_sourcekit_executable(sourcekitd-test
   sourcekitd-test.cpp

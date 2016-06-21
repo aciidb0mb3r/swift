@@ -473,6 +473,8 @@ public:
                           ArrayRef<const char *> Args,
                           DocInfoConsumer &Consumer) = 0;
 
+  virtual void doMyStuff() = 0;
+
   static std::unique_ptr<LangSupport> createSwiftLangSupport(
                                                      SourceKit::Context &SKCtx);
 };
