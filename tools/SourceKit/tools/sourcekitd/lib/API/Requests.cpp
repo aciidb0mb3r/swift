@@ -59,6 +59,7 @@ public:
 } // anonymous namespace.
 
 static LazySKDUID RequestProtocolVersion("source.request.protocol_version");
+static LazySKDUID RequestListFunctions("source.request.functions");
 
 static LazySKDUID RequestCrashWithExit("source.request.crash_exit");
 
@@ -316,6 +317,13 @@ void handleRequestImpl(sourcekitd_object_t ReqObj, ResponseReceiver Rec) {
   if (ReqUID == RequestCrashWithExit) {
     // 'exit' has the same effect as crashing but without the crash log.
     ::exit(1);
+  }
+
+  if (ReqUID == RequestListFunctions) {
+      LangSupport &Lang = getGlobalContext().getSwiftLangSupport();
+      Lang.listFunctions();
+      //Lang.getDocInfo(InputBuf, ModuleName, Args, DocConsumer);
+      ::exit(1);
   }
 
   if (ReqUID == RequestDemangle) {

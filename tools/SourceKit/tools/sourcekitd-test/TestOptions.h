@@ -49,6 +49,7 @@ enum class SourceKitRequest {
   PrintDiags,
   ExtractComment,
   ModuleGroups,
+  ListFunctions,
 };
 
 struct TestOptions {

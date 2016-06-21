@@ -376,6 +376,8 @@ public:
                   ArrayRef<const char *> Args,
                   DocInfoConsumer &Consumer) override;
 
+  void listFunctions() override;
+
   llvm::Optional<std::pair<unsigned, unsigned>>
       findUSRRange(StringRef DocumentName, StringRef USR) override;
 

@@ -143,6 +143,7 @@ static sourcekitd_uid_t RequestEditorExpandPlaceholder;
 static sourcekitd_uid_t RequestEditorFindUSR;
 static sourcekitd_uid_t RequestEditorFindInterfaceDoc;
 static sourcekitd_uid_t RequestDocInfo;
+static sourcekitd_uid_t RequestListFunctions;
 static sourcekitd_uid_t RequestModuleGroups;
 
 static sourcekitd_uid_t SemaDiagnosticStage;
@@ -166,6 +167,7 @@ int main(int argc, const char **argv) {
 
 static int skt_main(int argc, const char **argv) {
   llvm::sys::PrintStackTraceOnErrorSignal();
+
 
   sourcekitd_initialize();
 
@@ -248,6 +250,7 @@ static int skt_main(int argc, const char **argv) {
   RequestEditorFindInterfaceDoc = sourcekitd_uid_get_from_cstr("source.request.editor.find_interface_doc");
   RequestDocInfo = sourcekitd_uid_get_from_cstr("source.request.docinfo");
   RequestModuleGroups = sourcekitd_uid_get_from_cstr("source.request.module.groups");
+  RequestListFunctions = sourcekitd_uid_get_from_cstr("source.request.functions");
 
   // A test invocation may initialize the options to be used for subsequent
   // invocations.
@@ -537,6 +540,10 @@ static int handleTestInvocation(ArrayRef<const char *> Args,
     sourcekitd_request_dictionary_set_int64(Req, KeyEnableSyntaxMap, false);
     sourcekitd_request_dictionary_set_int64(Req, KeyEnableSubStructure, false);
     sourcekitd_request_dictionary_set_int64(Req, KeySyntacticOnly, !Opts.UsedSema);
+    break;
+
+  case SourceKitRequest::ListFunctions:
+    sourcekitd_request_dictionary_set_uid(Req, KeyRequest, RequestListFunctions);
     break;
 
   case SourceKitRequest::DocInfo:
