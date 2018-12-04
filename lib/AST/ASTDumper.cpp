@@ -1439,6 +1439,9 @@ public:
         case AvailabilitySpecKind::LanguageVersionConstraint:
           cast<LanguageVersionConstraintAvailabilitySpec>(Query)->print(OS, Indent + 2);
           break;
+        case AvailabilitySpecKind::SwiftPMManifestVersionConstraint:
+          cast<SwiftPMManifestVersionConstraintAvailabilitySpec>(Query)->print(OS, Indent + 2);
+          break;
         case AvailabilitySpecKind::OtherPlatform:
           cast<OtherPlatformAvailabilitySpec>(Query)->print(OS, Indent + 2);
           break;

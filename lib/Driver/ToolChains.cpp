@@ -221,6 +221,7 @@ static void addCommonFrontendArgs(const ToolChain &TC, const OutputInfo &OI,
   inputArgs.AddLastArg(arguments, options::OPT_AssumeSingleThreaded);
   inputArgs.AddLastArg(arguments,
                        options::OPT_enable_experimental_dependencies);
+  inputArgs.AddLastArg(arguments, options::OPT_swiftpm_manifest_version);
 
   // Pass on any build config options
   inputArgs.AddAllArgs(arguments, options::OPT_D);

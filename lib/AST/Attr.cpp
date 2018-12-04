@@ -142,7 +142,8 @@ const AvailableAttr *DeclAttributes::getUnavailable(
 
       // If this attribute doesn't apply to the active platform, we're done.
       if (!AvAttr->isActivePlatform(ctx) &&
-          !AvAttr->isLanguageVersionSpecific())
+          !AvAttr->isLanguageVersionSpecific() &&
+          !AvAttr->isSwiftPMManifestVersionSpecific())
         continue;
 
       // Unconditional unavailable.
@@ -172,7 +173,8 @@ DeclAttributes::getDeprecated(const ASTContext &ctx) const {
         continue;
 
       if (!AvAttr->isActivePlatform(ctx) &&
-          !AvAttr->isLanguageVersionSpecific())
+          !AvAttr->isLanguageVersionSpecific() &&
+          !AvAttr->isSwiftPMManifestVersionSpecific())
         continue;
 
       // Unconditional deprecated.
@@ -183,10 +185,7 @@ DeclAttributes::getDeprecated(const ASTContext &ctx) const {
       if (!DeprecatedVersion.hasValue())
         continue;
 
-      llvm::VersionTuple MinVersion =
-        AvAttr->isLanguageVersionSpecific() ?
-        ctx.LangOpts.EffectiveLanguageVersion :
-        ctx.LangOpts.getMinPlatformVersion();
+      llvm::VersionTuple MinVersion = AvAttr->getAvailKindMinVersion(ctx);
 
       // We treat the declaration as deprecated if it is deprecated on
       // all deployment targets.
@@ -240,6 +239,7 @@ static bool isShortAvailable(const DeclAttribute *DA) {
     return false;
   case PlatformAgnosticAvailabilityKind::None:
   case PlatformAgnosticAvailabilityKind::SwiftVersionSpecific:
+  case PlatformAgnosticAvailabilityKind::SwiftPMManifestVersionSpecific:
     return true;
   }
 
@@ -261,10 +261,16 @@ static void printShortFormAvailable(ArrayRef<const DeclAttribute *> Attrs,
   Printer << "@available(";
   auto FirstAvail = cast<AvailableAttr>(Attrs.front());
   if (Attrs.size() == 1 &&
-      FirstAvail->isLanguageVersionSpecific()) {
+      (FirstAvail->isLanguageVersionSpecific() || 
+	   FirstAvail->isSwiftPMManifestVersionSpecific())) {
     assert(FirstAvail->Introduced.hasValue());
-    Printer << "swift "
-            << FirstAvail->Introduced.getValue().getAsString()
+    if (FirstAvail->isLanguageVersionSpecific()) {
+        Printer << "swift ";
+    } else {
+        assert(FirstAvail->isSwiftPMManifestVersionSpecific());
+        Printer << "_PackageDescription ";
+    }
+    Printer << FirstAvail->Introduced.getValue().getAsString()
             << ")";
   } else {
     for (auto *DA : Attrs) {
@@ -290,6 +296,7 @@ void DeclAttributes::print(ASTPrinter &Printer, const PrintOptions &Options,
   // Process attributes in passes.
   AttributeVector shortAvailableAttributes;
   const DeclAttribute *swiftVersionAvailableAttribute = nullptr;
+  const DeclAttribute *swiftpmManifestVersionAvailableAttribute = nullptr;
   AttributeVector longAttributes;
   AttributeVector attributes;
   AttributeVector modifiers;
@@ -311,6 +318,11 @@ void DeclAttributes::print(ASTPrinter &Printer, const PrintOptions &Options,
         swiftVersionAvailableAttribute = availableAttr;
         continue;
       }
+      if (availableAttr->isSwiftPMManifestVersionSpecific() &&
+          isShortAvailable(availableAttr)) {
+        swiftpmManifestVersionAvailableAttribute = availableAttr;
+        continue;
+      }
     }
 
     AttributeVector &which = DA->isDeclModifier() ? modifiers :
@@ -322,6 +334,8 @@ void DeclAttributes::print(ASTPrinter &Printer, const PrintOptions &Options,
 
   if (swiftVersionAvailableAttribute)
     printShortFormAvailable(swiftVersionAvailableAttribute, Printer, Options);
+  if (swiftpmManifestVersionAvailableAttribute)
+    printShortFormAvailable(swiftpmManifestVersionAvailableAttribute, Printer, Options);
   if (!shortAvailableAttributes.empty())
     printShortFormAvailable(shortAvailableAttributes, Printer, Options);
 
@@ -424,6 +438,8 @@ bool DeclAttribute::printImpl(ASTPrinter &Printer, const PrintOptions &Options,
     auto Attr = cast<AvailableAttr>(this);
     if (Attr->isLanguageVersionSpecific())
       Printer << "swift";
+    else if (Attr->isSwiftPMManifestVersionSpecific())
+      Printer << "_PackageDescription";
     else
       Printer << Attr->platformString();
 
@@ -890,11 +906,25 @@ bool AvailableAttr::isLanguageVersionSpecific() const {
   return false;
 }
 
+bool AvailableAttr::isSwiftPMManifestVersionSpecific() const {
+  if (PlatformAgnostic ==
+      PlatformAgnosticAvailabilityKind::SwiftPMManifestVersionSpecific)
+    {
+      assert(Platform == PlatformKind::none &&
+             (Introduced.hasValue() ||
+              Deprecated.hasValue() ||
+              Obsoleted.hasValue()));
+      return true;
+    }
+  return false;
+}
+
 bool AvailableAttr::isUnconditionallyUnavailable() const {
   switch (PlatformAgnostic) {
   case PlatformAgnosticAvailabilityKind::None:
   case PlatformAgnosticAvailabilityKind::Deprecated:
   case PlatformAgnosticAvailabilityKind::SwiftVersionSpecific:
+  case PlatformAgnosticAvailabilityKind::SwiftPMManifestVersionSpecific:
     return false;
 
   case PlatformAgnosticAvailabilityKind::Unavailable:
@@ -911,6 +941,7 @@ bool AvailableAttr::isUnconditionallyDeprecated() const {
   case PlatformAgnosticAvailabilityKind::Unavailable:
   case PlatformAgnosticAvailabilityKind::UnavailableInSwift:
   case PlatformAgnosticAvailabilityKind::SwiftVersionSpecific:
+  case PlatformAgnosticAvailabilityKind::SwiftPMManifestVersionSpecific:
     return false;
 
   case PlatformAgnosticAvailabilityKind::Deprecated:
@@ -920,6 +951,16 @@ bool AvailableAttr::isUnconditionallyDeprecated() const {
   llvm_unreachable("Unhandled PlatformAgnosticAvailabilityKind in switch.");
 }
 
+llvm::VersionTuple AvailableAttr::getAvailKindMinVersion(const ASTContext &ctx) const {
+  if (isLanguageVersionSpecific()) {
+      return ctx.LangOpts.EffectiveLanguageVersion;
+  } else if (isSwiftPMManifestVersionSpecific()) {
+      return ctx.LangOpts.SwiftPMManifestVersion;
+  } else {
+      return ctx.LangOpts.getMinPlatformVersion();
+  }
+}
+
 AvailableVersionComparison AvailableAttr::getVersionAvailability(
   const ASTContext &ctx) const {
 
@@ -927,10 +968,7 @@ AvailableVersionComparison AvailableAttr::getVersionAvailability(
   if (isUnconditionallyUnavailable())
     return AvailableVersionComparison::Unavailable;
 
-  llvm::VersionTuple queryVersion =
-    isLanguageVersionSpecific() ?
-    ctx.LangOpts.EffectiveLanguageVersion :
-    ctx.LangOpts.getMinPlatformVersion();
+  llvm::VersionTuple queryVersion = getAvailKindMinVersion(ctx);
 
   // If this entity was obsoleted before or at the query platform version,
   // consider it obsolete.
@@ -943,7 +981,7 @@ AvailableVersionComparison AvailableAttr::getVersionAvailability(
   // static requirement, so we treat "introduced later" as just plain
   // unavailable.
   if (Introduced && *Introduced > queryVersion) {
-    if (isLanguageVersionSpecific())
+    if (isLanguageVersionSpecific() || isSwiftPMManifestVersionSpecific())
       return AvailableVersionComparison::Unavailable;
     else
       return AvailableVersionComparison::PotentiallyUnavailable;

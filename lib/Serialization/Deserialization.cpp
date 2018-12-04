@@ -2450,19 +2450,17 @@ ModuleFile::getDeclCheckedImpl(DeclID DID) {
   else X = llvm::VersionTuple(X##_Major);
 
         bool isImplicit;
-        bool isUnavailable;
-        bool isDeprecated;
         DEF_VER_TUPLE_PIECES(Introduced);
         DEF_VER_TUPLE_PIECES(Deprecated);
         DEF_VER_TUPLE_PIECES(Obsoleted);
-        unsigned platform, messageSize, renameSize;
+        unsigned platform, platformAgnosticKind, messageSize, renameSize;
         // Decode the record, pulling the version tuple information.
         serialization::decls_block::AvailableDeclAttrLayout::readRecord(
-            scratch, isImplicit, isUnavailable, isDeprecated,
+            scratch, isImplicit,
             LIST_VER_TUPLE_PIECES(Introduced),
             LIST_VER_TUPLE_PIECES(Deprecated),
             LIST_VER_TUPLE_PIECES(Obsoleted),
-            platform, messageSize, renameSize);
+            platform, platformAgnosticKind, messageSize, renameSize);
 
         StringRef message = blobData.substr(0, messageSize);
         blobData = blobData.substr(messageSize);
@@ -2472,27 +2470,14 @@ ModuleFile::getDeclCheckedImpl(DeclID DID) {
         DECODE_VER_TUPLE(Deprecated)
         DECODE_VER_TUPLE(Obsoleted)
 
-        PlatformAgnosticAvailabilityKind platformAgnostic;
-        if (isUnavailable)
-          platformAgnostic = PlatformAgnosticAvailabilityKind::Unavailable;
-        else if (isDeprecated)
-          platformAgnostic = PlatformAgnosticAvailabilityKind::Deprecated;
-        else if (((PlatformKind)platform) == PlatformKind::none &&
-                 (!Introduced.empty() ||
-                  !Deprecated.empty() ||
-                  !Obsoleted.empty()))
-          platformAgnostic =
-            PlatformAgnosticAvailabilityKind::SwiftVersionSpecific;
-        else
-          platformAgnostic = PlatformAgnosticAvailabilityKind::None;
-
         Attr = new (ctx) AvailableAttr(
           SourceLoc(), SourceRange(),
           (PlatformKind)platform, message, rename,
           Introduced, SourceRange(),
           Deprecated, SourceRange(),
           Obsoleted, SourceRange(),
-          platformAgnostic, isImplicit);
+          (PlatformAgnosticAvailabilityKind)platformAgnosticKind,
+          isImplicit);
         break;
 
 #undef DEF_VER_TUPLE_PIECES

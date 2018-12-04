@@ -82,6 +82,9 @@ namespace swift {
     /// \brief User-overridable language version to compile for.
     version::Version EffectiveLanguageVersion = version::Version::getCurrentLanguageVersion();
 
+    /// \brief SwiftPM manifest version to compile for.
+    version::Version SwiftPMManifestVersion;
+
     /// \brief Disable API availability checking.
     bool DisableAvailabilityChecking = false;
 

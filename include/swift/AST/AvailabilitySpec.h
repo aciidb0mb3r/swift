@@ -37,6 +37,9 @@ enum class AvailabilitySpecKind {
 
     /// A language-version constraint of the form "swift X.Y.Z"
     LanguageVersionConstraint,
+
+    /// A swiftpm-manifest-version constraint of the form "_PackageDescription X.Y.Z"
+    SwiftPMManifestVersionConstraint,
 };
 
 /// The root class for specifications of API availability in availability
@@ -133,6 +136,43 @@ public:
   void *
   operator new(size_t Bytes, ASTContext &C,
                unsigned Alignment = alignof(LanguageVersionConstraintAvailabilitySpec)){
+    return AvailabilitySpec::operator new(Bytes, C, Alignment);
+  }
+};
+
+/// \brief An availability specification that guards execution based on the
+/// compile-time swiftpm manifest version, e.g., swiftpm-manifest-version >= 3.0.1.
+class SwiftPMManifestVersionConstraintAvailabilitySpec : public AvailabilitySpec {
+  SourceLoc PackageDescriptionLoc;
+
+  llvm::VersionTuple Version;
+  SourceRange VersionSrcRange;
+
+public:
+  SwiftPMManifestVersionConstraintAvailabilitySpec(SourceLoc PackageDescriptionLoc,
+                                            llvm::VersionTuple Version,
+                                            SourceRange VersionSrcRange)
+    : AvailabilitySpec(AvailabilitySpecKind::SwiftPMManifestVersionConstraint),
+      PackageDescriptionLoc(PackageDescriptionLoc), Version(Version),
+      VersionSrcRange(VersionSrcRange) {}
+
+  SourceLoc getPackageDescriptionLoc() const { return PackageDescriptionLoc; }
+
+  // The swiftpm manifest version to compare against.
+  llvm::VersionTuple getVersion() const { return Version; }
+  SourceRange getVersionSrcRange() const { return VersionSrcRange; }
+
+  SourceRange getSourceRange() const;
+
+  void print(raw_ostream &OS, unsigned Indent) const;
+
+  static bool classof(const AvailabilitySpec *Spec) {
+    return Spec->getKind() == AvailabilitySpecKind::SwiftPMManifestVersionConstraint;
+  }
+
+  void *
+  operator new(size_t Bytes, ASTContext &C,
+               unsigned Alignment = alignof(SwiftPMManifestVersionConstraintAvailabilitySpec)){
     return AvailabilitySpec::operator new(Bytes, C, Alignment);
   }
 };

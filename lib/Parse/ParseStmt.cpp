@@ -1188,9 +1188,11 @@ static void validateAvailabilitySpecList(Parser &P,
   bool HasOtherPlatformSpec = false;
 
   if (Specs.size() == 1 &&
-      isa<LanguageVersionConstraintAvailabilitySpec>(Specs[0])) {
-    // @available(swift N) is allowed only in isolation; it cannot
-    // be combined with other availability specs in a single list.
+      (isa<LanguageVersionConstraintAvailabilitySpec>(Specs[0]) ||
+       isa<SwiftPMManifestVersionConstraintAvailabilitySpec>(Specs[0]))) {
+    // @available(swift N) and @available(_PackageDescription N) are allowed 
+    // only in isolation; it cannot be combined with other availability specs
+    // in a single list.
     return;
   }
 
@@ -1203,7 +1205,14 @@ static void validateAvailabilitySpecList(Parser &P,
     if (auto *LangSpec =
         dyn_cast<LanguageVersionConstraintAvailabilitySpec>(Spec)) {
       P.diagnose(LangSpec->getSwiftLoc(),
-                 diag::availability_swift_must_occur_alone);
+                 diag::availability_must_occur_alone, "swift");
+      continue;
+    }
+
+    if (auto *LangSpec =
+        dyn_cast<SwiftPMManifestVersionConstraintAvailabilitySpec>(Spec)) {
+      P.diagnose(LangSpec->getPackageDescriptionLoc(),
+                 diag::availability_must_occur_alone, "_PackageDescription");
       continue;
     }
 
@@ -1254,6 +1263,13 @@ ParserResult<PoundAvailableInfo> Parser::parseStmtConditionPoundAvailable() {
         dyn_cast<LanguageVersionConstraintAvailabilitySpec>(Spec)) {
       diagnose(Lang->getSwiftLoc(),
                diag::pound_available_swift_not_allowed);
+      Status.setIsParseError();
+    }
+
+    if (auto *Lang =
+        dyn_cast<SwiftPMManifestVersionConstraintAvailabilitySpec>(Spec)) {
+      diagnose(Lang->getPackageDescriptionLoc(),
+               diag::pound_available_swiftpm_not_allowed);
       Status.setIsParseError();
     }
   }

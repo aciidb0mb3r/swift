@@ -1416,6 +1416,8 @@ public:
   parsePlatformVersionConstraintSpec();
   ParserResult<LanguageVersionConstraintAvailabilitySpec>
   parseLanguageVersionConstraintSpec();
+  ParserResult<SwiftPMManifestVersionConstraintAvailabilitySpec>
+  parseSwiftPMManifestVersionConstraintSpec();
 
   bool canDelayMemberDeclParsing();
 };

@@ -172,6 +172,11 @@ def swift_version : Separate<["-"], "swift-version">, Flags<[FrontendOption, Par
   HelpText<"Interpret input according to a specific Swift language version number">,
   MetaVarName<"<vers>">;
 
+def swiftpm_manifest_version : Separate<["-"], "swiftpm-manifest-version">,
+  Flags<[FrontendOption, HelpHidden, ParseableInterfaceOption]>,
+  HelpText<"Interpret input according to a specific SwiftPM manifest version number">,
+  MetaVarName<"<vers>">;
+
 def tools_directory : Separate<["-"], "tools-directory">,
   Flags<[FrontendOption, NoInteractiveOption, DoesNotAffectIncrementalBuild,
          ArgumentIsPath]>,

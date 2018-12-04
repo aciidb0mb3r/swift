@@ -1545,12 +1545,11 @@ namespace decls_block {
   using AvailableDeclAttrLayout = BCRecordLayout<
     Available_DECL_ATTR,
     BCFixed<1>, // implicit flag
-    BCFixed<1>, // is unconditionally unavailable?
-    BCFixed<1>, // is unconditionally deprecated?
     BC_AVAIL_TUPLE, // Introduced
     BC_AVAIL_TUPLE, // Deprecated
     BC_AVAIL_TUPLE, // Obsoleted
     BCVBR<5>,   // platform
+    BCVBR<5>,   // platform agnostic kind
     BCVBR<5>,   // number of bytes in message string
     BCVBR<5>,   // number of bytes in rename string
     BCBlob      // platform, followed by message

@@ -3556,8 +3556,12 @@ ParserResult<AvailabilitySpec> Parser::parseAvailabilitySpec() {
 
     return makeParserResult(new (Context) OtherPlatformAvailabilitySpec(StarLoc));
   }
-  if (Tok.isIdentifierOrUnderscore() && Tok.getText() == "swift") {
-    return parseLanguageVersionConstraintSpec();
+  if (Tok.isIdentifierOrUnderscore()) {
+    if (Tok.getText() == "swift") {
+      return parseLanguageVersionConstraintSpec();
+    } else if (Tok.getText() == "_PackageDescription") {
+      return parseSwiftPMManifestVersionConstraintSpec();
+    }
   }
 
   return parsePlatformVersionConstraintSpec();
@@ -3586,6 +3590,27 @@ Parser::parseLanguageVersionConstraintSpec() {
   return makeParserResult(new (Context)
                           LanguageVersionConstraintAvailabilitySpec(
                             SwiftLoc, Version, VersionRange));
+}
+
+ParserResult<SwiftPMManifestVersionConstraintAvailabilitySpec>
+Parser::parseSwiftPMManifestVersionConstraintSpec() {
+  SyntaxParsingContext VersionRestrictionContext(
+      SyntaxContext, SyntaxKind::AvailabilityVersionRestriction);
+  SourceLoc SwiftPMLoc;
+  llvm::VersionTuple Version;
+  SourceRange VersionRange;
+  if (!(Tok.isIdentifierOrUnderscore() && Tok.getText() == "_PackageDescription"))
+    return nullptr;
+
+  SwiftPMLoc = Tok.getLoc();
+  consumeToken();
+  if (parseVersionTuple(Version, VersionRange,
+                        diag::avail_query_expected_version_number)) {
+    return nullptr;
+  }
+  return makeParserResult(new (Context)
+                          SwiftPMManifestVersionConstraintAvailabilitySpec(
+                            SwiftPMLoc, Version, VersionRange));
 }
 
 /// Parse platform-version constraint specification.

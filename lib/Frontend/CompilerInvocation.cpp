@@ -199,6 +199,16 @@ static bool ParseLangArgs(LangOptions &Opts, ArgList &Args,
       diagnoseSwiftVersion(vers, A, Args, Diags);
   }
 
+  if (auto A = Args.getLastArg(OPT_swiftpm_manifest_version)) {
+    auto vers = version::Version::parseVersionString(
+      A->getValue(), SourceLoc(), &Diags);
+    if (vers.hasValue()) {
+      Opts.SwiftPMManifestVersion = vers.getValue();
+    } else {
+        return true;
+    }
+  }
+
   Opts.AttachCommentsToDecls |= Args.hasArg(OPT_dump_api_path);
 
   Opts.UseMalloc |= Args.hasArg(OPT_use_malloc);

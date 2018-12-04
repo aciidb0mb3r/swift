@@ -28,6 +28,9 @@ SourceRange AvailabilitySpec::getSourceRange() const {
  case AvailabilitySpecKind::LanguageVersionConstraint:
    return cast<LanguageVersionConstraintAvailabilitySpec>(this)->getSourceRange();
 
+ case AvailabilitySpecKind::SwiftPMManifestVersionConstraint:
+   return cast<SwiftPMManifestVersionConstraintAvailabilitySpec>(this)->getSourceRange();
+
   case AvailabilitySpecKind::OtherPlatform:
     return cast<OtherPlatformAvailabilitySpec>(this)->getSourceRange();
   }
@@ -61,6 +64,17 @@ SourceRange LanguageVersionConstraintAvailabilitySpec::getSourceRange() const {
 void LanguageVersionConstraintAvailabilitySpec::print(raw_ostream &OS,
                                                       unsigned Indent) const {
   OS.indent(Indent) << '(' << "language_version_constraint_availability_spec"
+                    << " version='" << getVersion() << "'"
+                    << ')';
+}
+
+SourceRange SwiftPMManifestVersionConstraintAvailabilitySpec::getSourceRange() const {
+  return SourceRange(PackageDescriptionLoc, VersionSrcRange.End);
+}
+
+void SwiftPMManifestVersionConstraintAvailabilitySpec::print(raw_ostream &OS,
+                                                      unsigned Indent) const {
+  OS.indent(Indent) << '(' << "swiftpm_manifest_version_constraint_availability_spec"
                     << " version='" << getVersion() << "'"
                     << ')';
 }
