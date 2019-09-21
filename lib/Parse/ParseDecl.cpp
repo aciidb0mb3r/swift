@@ -1404,6 +1404,61 @@ bool Parser::parseNewDeclAttribute(DeclAttributes &Attributes, SourceLoc AtLoc,
     }
     break;
   }
+  case DAK_Package: {
+    // Parse the leading '('.
+    if (Tok.isNot(tok::l_paren)) {
+      diagnose(Loc, diag::attr_expected_lparen, AttrName,
+               DeclAttribute::isDeclModifier(DK));
+      return false;
+    }
+    SourceLoc LParenLoc = consumeToken(tok::l_paren);
+    Optional<StringRef> url;
+    {
+      SyntaxParsingContext ContentContext(
+          SyntaxContext, SyntaxKind::NamedAttributeStringArgument);
+
+      // Parse 'url'.
+      if (Tok.getText() != "url") {
+        // FIXME(ankit)
+        diagnose(LParenLoc, diag::attr_private_import_expected_sourcefile);
+        return false;
+      }
+      auto ForLoc = consumeToken();
+
+      // Parse ':'.
+      if (Tok.getKind() != tok::colon) {
+        diagnose(ForLoc, diag::attr_private_import_expected_colon);
+        return false;
+      }
+      auto ColonLoc = consumeToken(tok::colon);
+
+      // Parse 'url'.
+      if (Tok.isNot(tok::string_literal)) {
+        // FIXME(ankit)
+        diagnose(ColonLoc, diag::attr_private_import_expected_sourcefile_name);
+        return false;
+      }
+      url = getStringLiteralIfNotInterpolated(Loc, "package");
+      if (!url.hasValue()) {
+        // FIXME(ankit)
+        diagnose(ColonLoc, diag::attr_private_import_expected_sourcefile_name);
+        return false;
+      }
+      consumeToken(tok::string_literal);
+    }
+    // Parse the matching ')'.
+    SourceLoc RParenLoc;
+    // FIXME(ankit)
+    bool Invalid = parseMatchingToken(tok::r_paren, RParenLoc,
+                                      diag::attr_private_import_expected_rparen,
+                                      LParenLoc);
+    if (Invalid)
+      return false;
+    auto *attr = new (Context) PackageAttr(*url);
+    Attributes.add(attr);
+
+    break;
+  }
   case DAK_PrivateImport: {
     // Parse the leading '('.
     if (Tok.isNot(tok::l_paren)) {

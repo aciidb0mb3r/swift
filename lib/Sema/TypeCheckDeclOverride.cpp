@@ -1333,6 +1333,7 @@ namespace  {
     UNINTERESTING_ATTR(Specialize)
     UNINTERESTING_ATTR(DynamicReplacement)
     UNINTERESTING_ATTR(PrivateImport)
+    UNINTERESTING_ATTR(Package)
 
     // These can't appear on overridable declarations.
     UNINTERESTING_ATTR(Prefix)

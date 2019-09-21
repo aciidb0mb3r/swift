@@ -102,6 +102,7 @@ public:
   IGNORED_ATTR(Testable)
   IGNORED_ATTR(WeakLinked)
   IGNORED_ATTR(PrivateImport)
+  IGNORED_ATTR(Package)
   IGNORED_ATTR(DisfavoredOverload)
   IGNORED_ATTR(ProjectedValueProperty)
   IGNORED_ATTR(ReferenceOwnership)

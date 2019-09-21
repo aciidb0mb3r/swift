@@ -502,6 +502,13 @@ SIMPLE_DECL_ATTR(IBSegueAction, IBSegueAction,
   ABIStableToAdd | ABIStableToRemove | APIStableToAdd | APIStableToRemove,
   95)
 
+DECL_ATTR(package, Package,
+  OnImport |
+  UserInaccessible |
+  NotSerialized |
+  ABIStableToAdd | ABIStableToRemove | APIStableToAdd | APIStableToRemove,
+  96)
+
 #undef TYPE_ATTR
 #undef DECL_ATTR_ALIAS
 #undef CONTEXTUAL_DECL_ATTR_ALIAS

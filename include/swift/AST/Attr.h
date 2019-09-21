@@ -1532,6 +1532,24 @@ public:
   }
 };
 
+class PackageAttr final : public DeclAttribute {
+  StringRef url;
+
+public:
+  PackageAttr(StringRef url)
+  : DeclAttribute(DAK_Package, SourceLoc(), SourceRange(), /*Implicit=*/false),
+  url(url) {}
+
+
+  StringRef getURL() const {
+    return url;
+  }
+
+  static bool classof(const DeclAttribute *DA) {
+    return DA->getKind() == DAK_Package;
+  }
+};
+
 /// Attributes that may be applied to declarations.
 class DeclAttributes {
   /// Linked list of declaration attributes.
