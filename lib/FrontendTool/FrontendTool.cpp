@@ -382,6 +382,38 @@ getFileOutputStream(StringRef OutputFilename, ASTContext &Ctx) {
   return os;
 }
 
+static void emitPackageImports(ASTContext &Context, ModuleDecl *mainModule,
+                                const FrontendOptions &opts) {
+
+  auto out = getFileOutputStream(opts.InputsAndOutputs.getSingleOutputFilename(), Context);
+  if (!out) return;
+
+  llvm::SetVector<StringRef> Modules;
+
+  llvm::SmallVector<Decl *, 32> Decls;
+  mainModule->getDisplayDecls(Decls);
+
+  for (auto D : Decls) {
+    auto ID = dyn_cast<ImportDecl>(D);
+    if (!ID)
+      continue;
+
+    auto attrs = ID->getAttrs();
+    for (auto axe : attrs) {
+      auto package = dyn_cast<PackageAttr>(axe);
+      if (!package) continue;
+      llvm::outs() << package->getURL();
+    }
+
+    auto accessPath = ID->getModulePath();
+    // Only the top-level name is needed (i.e. A in A.B.C).
+    Modules.insert(accessPath[0].first.str());
+  }
+  for (auto name : Modules) {
+     *out << name << "\n";
+   }
+}
+
 /// Writes the Syntax tree to the given file
 static bool emitSyntax(SourceFile *SF, LangOptions &LangOpts,
                        SourceManager &SM, StringRef OutputFilename) {
@@ -838,7 +870,13 @@ static Optional<bool> dumpASTIfNeeded(CompilerInvocation &Invocation,
     break;
 
   case FrontendOptions::ActionType::EmitImportedModules:
-    emitImportedModules(Context, Instance.getMainModule(), opts);
+      emitPackageImports(Context, Instance.getMainModule(), opts);
+
+//    emitImportedModules(Context, Instance.getMainModule(), opts);
+    break;
+
+  case FrontendOptions::ActionType::EmitPackageImports:
+    emitPackageImports(Context, Instance.getMainModule(), opts);
     break;
   }
   return Context.hadError();
@@ -1050,9 +1088,10 @@ static bool performCompile(CompilerInstance &Instance,
     bool ParseDelayedDeclListsOnEnd =
       Action == FrontendOptions::ActionType::DumpParse ||
       Invocation.getDiagnosticOptions().VerifyMode != DiagnosticOptions::NoVerify;
-    Instance.performParseOnly(/*EvaluateConditionals*/
-                    Action == FrontendOptions::ActionType::EmitImportedModules,
-                              ParseDelayedDeclListsOnEnd);
+    bool EvaluateConditionals =
+      Action == FrontendOptions::ActionType::EmitImportedModules ||
+      Action == FrontendOptions::ActionType::EmitPackageImports;
+    Instance.performParseOnly(EvaluateConditionals, ParseDelayedDeclListsOnEnd);
   } else if (Action == FrontendOptions::ActionType::ResolveImports) {
     Instance.performParseAndResolveImportsOnly();
   } else {

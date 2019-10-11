@@ -125,6 +125,7 @@ public:
     DumpTypeRefinementContexts,
 
     EmitImportedModules, ///< Emit the modules that this one imports
+    EmitPackageImports,  ///< FIXME
     EmitPCH,             ///< Emit PCH of imported bridging header
 
     EmitSILGen, ///< Emit raw SIL

@@ -40,6 +40,7 @@ bool FrontendOptions::needsProperModuleName(ActionType action) {
   case ActionType::PrintAST:
   case ActionType::DumpScopeMaps:
   case ActionType::DumpTypeRefinementContexts:
+  case ActionType::EmitPackageImports:
     return false;
   case ActionType::EmitPCH:
   case ActionType::EmitSILGen:
@@ -57,7 +58,7 @@ bool FrontendOptions::needsProperModuleName(ActionType action) {
   case ActionType::EmitIR:
   case ActionType::EmitBC:
   case ActionType::EmitObject:
-  case ActionType::EmitImportedModules:
+    case ActionType::EmitImportedModules:
   case ActionType::DumpTypeInfo:
     return true;
   }
@@ -94,6 +95,7 @@ bool FrontendOptions::isActionImmediate(ActionType action) {
   case ActionType::EmitBC:
   case ActionType::EmitObject:
   case ActionType::EmitImportedModules:
+  case ActionType::EmitPackageImports:
   case ActionType::DumpTypeInfo:
     return false;
   }
@@ -107,6 +109,7 @@ bool FrontendOptions::shouldActionOnlyParse(ActionType action) {
   case FrontendOptions::ActionType::EmitSyntax:
   case FrontendOptions::ActionType::DumpInterfaceHash:
   case FrontendOptions::ActionType::EmitImportedModules:
+  case FrontendOptions::ActionType::EmitPackageImports:
     return true;
   default:
     return false;
@@ -194,6 +197,9 @@ FrontendOptions::formatForPrincipalOutputFileForAction(ActionType action) {
 
   case ActionType::EmitImportedModules:
     return TY_ImportedModules;
+
+  case ActionType::EmitPackageImports:
+      return TY_Nothing;
   }
   llvm_unreachable("unhandled action");
 }
@@ -213,6 +219,7 @@ bool FrontendOptions::canActionEmitDependencies(ActionType action) {
   case ActionType::CompileModuleFromInterface:
   case ActionType::Immediate:
   case ActionType::REPL:
+  case ActionType::EmitPackageImports:
     return false;
   case ActionType::ResolveImports:
   case ActionType::Typecheck:
@@ -249,6 +256,7 @@ bool FrontendOptions::canActionEmitReferenceDependencies(ActionType action) {
   case ActionType::CompileModuleFromInterface:
   case ActionType::Immediate:
   case ActionType::REPL:
+  case ActionType::EmitPackageImports:
     return false;
   case ActionType::Typecheck:
   case ActionType::MergeModules:
@@ -285,6 +293,7 @@ bool FrontendOptions::canActionEmitObjCHeader(ActionType action) {
   case ActionType::CompileModuleFromInterface:
   case ActionType::Immediate:
   case ActionType::REPL:
+  case ActionType::EmitPackageImports:
     return false;
   case ActionType::Typecheck:
   case ActionType::MergeModules:
@@ -318,6 +327,7 @@ bool FrontendOptions::canActionEmitLoadedModuleTrace(ActionType action) {
   case ActionType::CompileModuleFromInterface:
   case ActionType::Immediate:
   case ActionType::REPL:
+  case ActionType::EmitPackageImports:
     return false;
   case ActionType::ResolveImports:
   case ActionType::Typecheck:
@@ -357,6 +367,7 @@ bool FrontendOptions::canActionEmitModule(ActionType action) {
   case ActionType::CompileModuleFromInterface:
   case ActionType::Immediate:
   case ActionType::REPL:
+  case ActionType::EmitPackageImports:
     return false;
   case ActionType::MergeModules:
   case ActionType::EmitModuleOnly:
@@ -397,6 +408,7 @@ bool FrontendOptions::canActionEmitInterface(ActionType action) {
   case ActionType::CompileModuleFromInterface:
   case ActionType::Immediate:
   case ActionType::REPL:
+  case ActionType::EmitPackageImports:
     return false;
   case ActionType::Typecheck:
   case ActionType::MergeModules:
@@ -438,6 +450,7 @@ bool FrontendOptions::doesActionProduceOutput(ActionType action) {
   case ActionType::MergeModules:
   case ActionType::CompileModuleFromInterface:
   case ActionType::DumpTypeInfo:
+  case ActionType::EmitPackageImports:
     return true;
 
   case ActionType::NoneAction:
@@ -479,6 +492,7 @@ bool FrontendOptions::doesActionProduceTextualOutput(ActionType action) {
   case ActionType::EmitAssembly:
   case ActionType::EmitIR:
   case ActionType::DumpTypeInfo:
+  case ActionType::EmitPackageImports:
     return true;
   }
   llvm_unreachable("unhandled action");
@@ -500,6 +514,7 @@ bool FrontendOptions::doesActionGenerateSIL(ActionType action) {
   case ActionType::EmitImportedModules:
   case ActionType::EmitPCH:
   case ActionType::CompileModuleFromInterface:
+  case ActionType::EmitPackageImports:
     return false;
   case ActionType::EmitSILGen:
   case ActionType::EmitSIBGen:
